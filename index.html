@@ -1359,7 +1359,7 @@
     }
     async function initAudio() {
         if (audioInitialized) return true;
-        if (typeof Tone === 'undefined' || Tone.context.state === 'closed') {
+        if (typeof Tone === 'undefined' || (Tone && Tone.context.state === 'closed')) {
             console.error("Tone.js not ready or context closed.");
             return false;
         }
@@ -1411,16 +1411,29 @@
         tabataState = {};
     }
     function setProgress(percent) {
-        const offset = tabataState.circumference - percent / 100 * tabataState.circumference;
-        tabataState.progressCircle.style.strokeDashoffset = offset;
+        const circle = document.getElementById('tabataProgressCircle');
+        if (!circle) return;
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        const offset = circumference - percent / 100 * circumference;
+        circle.style.strokeDashoffset = offset;
     }
     function runTabataSequence() {
         const screen = document.getElementById('tabataScreen'), statusEl = document.getElementById('tabataStatus');
         const timeEl = document.getElementById('tabataTime'), roundEl = document.getElementById('tabataRound');
+        const progressCircle = document.getElementById('tabataProgressCircle');
+
+        if (!progressCircle) return;
+
+        const radius = progressCircle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressCircle.style.strokeDashoffset = circumference;
+        
         const updateDisplay = (status, time, roundText, colorClass, circleColor) => {
             statusEl.textContent = status; timeEl.textContent = time; roundEl.textContent = roundText;
             screen.className = `absolute inset-0 rounded-2xl transition-all duration-500 ${colorClass}`;
-            tabataState.progressCircle.setAttribute('class', `progress-ring__circle ${circleColor}`);
+            progressCircle.setAttribute('class', `progress-ring__circle ${circleColor}`);
         };
         const playSound = (note, duration = '8n') => { if (tabataState.synth) tabataState.synth.triggerAttackRelease(note, duration); };
         let sequence = [];
